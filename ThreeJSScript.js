@@ -726,7 +726,7 @@ window.updateCardModelFromState = function () { // Exposed globally
   } else if (activeState.design === 'duotone') {
     const w = bgCanvas.width;
     const h = bgCanvas.height;
-    const leftWidth = Math.round(w * 0.55);
+    const leftWidth = Math.round(w * 0.5);
     const rightWidth = w - leftWidth; // ensures exact total width
 
     bgCtx.fillStyle = activeState.colorOne || '#CCC';
