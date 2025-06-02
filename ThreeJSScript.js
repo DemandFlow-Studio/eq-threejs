@@ -10,7 +10,7 @@ const cardMeshes = {};
 // Expose variables globally for floating animations
 window.cardModel = null;
 window.floatingAnimations = null;
- 
+
 window.cardState = window.cardState || {
   tab: 'customize',
   customDesign: 'duotone',
@@ -1087,10 +1087,8 @@ function addPositioningListeners() {
 
 // Simplified Event Listener Setup (Focus on critical state changes)
 function setupBasicListeners() {
-
-  const nameInput = document.querySelector('[data-name-input]');
-
-  if (nameInput) nameInput.addEventListener('input', (e) => {
+    const nameInput = document.querySelector('[data-name-input]');
+    if (nameInput) nameInput.addEventListener('input', (e) => {
     window.cardState.name = e.target.value;
     updateCardModelFromState();
   });
