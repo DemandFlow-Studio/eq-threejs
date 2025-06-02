@@ -992,6 +992,10 @@ window.updateCardModelFromState = function () { // Exposed globally
         activeLogo.renderOrder = 999; // Force higher render order for transparency
 
         activeLogo.visible = true;
+
+        if (activeLogo === cardMeshes.LogoCenter) {
+          activeLogo.position.x = 0.035; // Adjust slightly to the right
+        }
       };
       img.onerror = () => {
         console.error("Error loading image for logo texture:", activeState.logoUrl);
@@ -1179,3 +1183,6 @@ if (document.readyState === 'loading') {
   startSmoothProgress(); // Start the smooth progress animation
   // Don't hide loader here, loadingManager.onLoad will handle it
 }
+
+
+
