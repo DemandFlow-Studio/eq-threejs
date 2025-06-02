@@ -1,4 +1,4 @@
-// STATE MANAGEMENT
+// state management
 document.addEventListener('DOMContentLoaded', function () {
   // 1. STATE OBJECTS
   window.cardState = {
@@ -12,13 +12,13 @@ document.addEventListener('DOMContentLoaded', function () {
     customGradientColorOne: '#667ED8',
     customGradientColorTwo: '#69F7DB',
 
-    selectedTemplateId: null, // e.g., '01', '02'
+    selectedTemplateId: '01', // e.g., '01', '02' - default to first template
     name: '', // Name remains shared and user-driven
     logoUrl: null,
     // For revoking object URLs
     _currentLogoObjectUrl: null
   };
- 
+
   const templates = {
     '01': {
       design: 'classic',
@@ -92,6 +92,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function updateColorIndicators() {
+    const colorIndicators = document.querySelector('.color-indicators');
+    const firstIndicator = colorIndicators.querySelector('.color_indicator-item.first');
+    const secondIndicator = colorIndicators.querySelector('.color_indicator-item:not(.first)');
+
+    if (!window.cardState) return;
+
+    // Hide both indicators by default
+    firstIndicator.style.display = 'none';
+    secondIndicator.style.display = 'none';
+
+    if (window.cardState.customDesign === 'classic') {
+      // Show only first indicator for classic design
+      firstIndicator.style.display = 'block';
+      firstIndicator.style.backgroundColor = window.cardState.classicColor;
+      firstIndicator.style.marginRight = '0'; // Reset margin when only one is shown
+    } else if (window.cardState.customDesign === 'duotone') {
+      // Show both indicators for duotone design
+      firstIndicator.style.display = 'block';
+      secondIndicator.style.display = 'block';
+      firstIndicator.style.backgroundColor = window.cardState.customColorOne;
+      secondIndicator.style.backgroundColor = window.cardState.customColorTwo;
+      firstIndicator.style.marginRight = '-4px'; // Overlap effect
+    } else if (window.cardState.customDesign === 'gradient') {
+      // Show both indicators for gradient design
+      firstIndicator.style.display = 'block';
+      secondIndicator.style.display = 'block';
+      firstIndicator.style.backgroundColor = window.cardState.customGradientColorOne;
+      secondIndicator.style.backgroundColor = window.cardState.customGradientColorTwo;
+      firstIndicator.style.marginRight = '-4px'; // Overlap effect
+    }
+  }
+
   function reflectStateInCustomizeUI() {
     if (!window.cardState) return;
 
@@ -155,9 +188,92 @@ document.addEventListener('DOMContentLoaded', function () {
       if (logoUploadInput) logoUploadInput.value = '';
     }
 
-    if (typeof window.updateColorIndicators === 'function') window.updateColorIndicators();
+    // Update design option tag based on current state
+    updateDesignOptionTag();
+
     if (typeof window.updateStep1Header === 'function') window.updateStep1Header();
+
+    // Update color indicators
+    updateColorIndicators();
   }
+
+  // Add dedicated function to update design option tag
+  function updateDesignOptionTag() {
+    const designOptionTagElement = document.getElementById('designOptionTag');
+    if (!designOptionTagElement) return;
+
+    // Always show and update the design option tag based on current state
+    let displayText = '';
+
+    if (window.selectedDesignName) {
+      displayText = window.selectedDesignName;
+    } else if (window.cardState && window.cardState.customDesign) {
+      // Fallback to capitalize the design name from state
+      displayText = window.cardState.customDesign.charAt(0).toUpperCase() + window.cardState.customDesign.slice(1);
+    } else {
+      displayText = 'Duotone'; // Default fallback
+    }
+
+    // Set the text content
+    designOptionTagElement.textContent = displayText;
+    designOptionTagElement.style.display = 'inline';
+  }
+
+  // Add dedicated function to update template option tag
+  function updateTemplateOptionTag() {
+    const templateOptionTagElement = document.getElementById('templateOptionTag');
+    if (!templateOptionTagElement) return;
+
+    // Update template option tag based on current state
+    let displayText = '';
+
+    // First try to get from selectedTemplateName
+    if (window.selectedTemplateName) {
+      displayText = window.selectedTemplateName;
+    }
+    // Then try to get from selectedTemplateId in state
+    else if (window.cardState && window.cardState.selectedTemplateId) {
+      // Try to get the template name from DOM
+      const templateElement = document.querySelector(`[data-template-option="${window.cardState.selectedTemplateId}"]`);
+      if (templateElement) {
+        // Try to get text from the div that's not .card_design-item
+        const nameElement = templateElement.querySelector('div:not(.card_design-item)');
+        if (nameElement && nameElement.textContent.trim()) {
+          displayText = nameElement.textContent.trim();
+        } else {
+          // Fallback to the attribute value itself
+          displayText = window.cardState.selectedTemplateId;
+        }
+      } else {
+        // Element not found, use the ID directly
+        displayText = window.cardState.selectedTemplateId;
+      }
+    }
+    // Try to find any active template element
+    else {
+      const activeTemplateElement = document.querySelector('[data-template-option].is-active');
+      if (activeTemplateElement) {
+        const templateId = activeTemplateElement.getAttribute('data-template-option');
+        const nameElement = activeTemplateElement.querySelector('div:not(.card_design-item)');
+        if (nameElement && nameElement.textContent.trim()) {
+          displayText = nameElement.textContent.trim();
+        } else {
+          displayText = templateId;
+        }
+      } else {
+        // Final fallback
+        displayText = '01';
+      }
+    }
+
+    // Set the text content
+    templateOptionTagElement.textContent = displayText;
+    templateOptionTagElement.style.display = 'inline';
+  }
+
+  // Expose the function globally
+  window.updateDesignOptionTag = updateDesignOptionTag;
+  window.updateTemplateOptionTag = updateTemplateOptionTag;
   window.reflectStateInCustomizeUI = reflectStateInCustomizeUI;
 
   function applyTemplateToState(templateId) {
@@ -181,17 +297,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.cardState.selectedTemplateId = templateId;
 
+    // Try to get the template name from DOM first
     const templateOptionElement = document.querySelector(`[data-template-option="${templateId}"]`);
     if (templateOptionElement) {
       const nameElement = templateOptionElement.querySelector('div:not(.card_design-item)');
-      window.selectedTemplateName = nameElement ? nameElement.textContent.trim() : templateId;
+      if (nameElement && nameElement.textContent.trim()) {
+        window.selectedTemplateName = nameElement.textContent.trim();
+      } else {
+        // Fallback to templateId if no text content found
+        window.selectedTemplateName = templateId;
+      }
     } else {
+      // If element not found, use templateId
       window.selectedTemplateName = templateId;
     }
 
+    // Update template option tag immediately
+    updateTemplateOptionTag();
+
     // reflectStateInCustomizeUI(); // DO NOT CALL: Customize UI is independent
     if (typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
-    console.log("Card state updated (applyTemplateToState - selectedTemplateId only):", JSON.parse(JSON.stringify(window.cardState)));
+    // Note: updateCardModelFromState is now called with proper timing in tab switch logic
   }
   window.applyTemplateToState = applyTemplateToState;
 
@@ -232,45 +358,12 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
-    if (typeof window.updateColorIndicators === 'function') window.updateColorIndicators();
     if (stateChanged) {
-      console.log("Card state updated (handleColorInputChange):", JSON.parse(JSON.stringify(window.cardState)));
+      // Update design option tag when colors change (since it shows current design state)
+      if (typeof window.updateDesignOptionTag === 'function') {
+        window.updateDesignOptionTag();
+      }
     }
-  }
-
-  if (typeof window.updateColorIndicators === 'function') {
-    window.updateColorIndicators = function () { // Fully redefine, integrating cardState
-      const colorIndicatorsEl = document.getElementById('colorIndicators');
-      const colorOneIndicator = document.getElementById('colorOne');
-      const colorTwoIndicator = document.getElementById('colorTwo');
-      if (!colorIndicatorsEl || !colorOneIndicator || !colorTwoIndicator) return;
-
-      // Indicators should reflect the custom design settings when in customize tab context
-      colorOneIndicator.style.backgroundColor = window.cardState.customDesign === 'gradient' ? window.cardState.customGradientColorOne : (window.cardState.customDesign === 'classic' ? window.cardState.classicColor : window.cardState.customColorOne);
-      colorOneIndicator.style.display = 'inline-block';
-
-      if (window.cardState.customDesign === 'duotone') {
-        colorTwoIndicator.style.backgroundColor = window.cardState.customColorTwo;
-        colorTwoIndicator.style.display = 'inline-block';
-      } else if (window.cardState.customDesign === 'gradient') {
-        colorTwoIndicator.style.backgroundColor = window.cardState.customGradientColorTwo;
-        colorTwoIndicator.style.display = 'inline-block';
-      } else {
-        colorTwoIndicator.style.display = 'none';
-      }
-
-      const step2Accordion = document.querySelector('[data-controls-step="2"].control_accordian'); // Ensure it's the customize tab one
-      if (step2Accordion) {
-        const step2Content = step2Accordion.querySelector('.c_accordian-content');
-        if (step2Content && step2Content.style.height === '0px') {
-          colorIndicatorsEl.style.display = 'flex';
-        } else {
-          colorIndicatorsEl.style.display = 'none';
-        }
-      } else {
-        colorIndicatorsEl.style.display = 'none'; // Default if not found
-      }
-    };
   }
 
   document.querySelectorAll('[data-design]').forEach(item => {
@@ -280,7 +373,8 @@ document.addEventListener('DOMContentLoaded', function () {
       // window.selectedTemplateName = ''; // No longer clearing template name
       // if(typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header(); // No longer updating template header
       reflectStateInCustomizeUI();
-      console.log("Card state updated (customDesign change):", JSON.parse(JSON.stringify(window.cardState)));
+      // Also update the design option tag immediately
+      updateDesignOptionTag();
     });
   });
 
@@ -291,7 +385,6 @@ document.addEventListener('DOMContentLoaded', function () {
       // window.selectedTemplateName = '';
       // if(typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
       reflectStateInCustomizeUI();
-      console.log("Card state updated (customGradientType change):", JSON.parse(JSON.stringify(window.cardState)));
     });
   });
 
@@ -301,6 +394,12 @@ document.addEventListener('DOMContentLoaded', function () {
       applyTemplateToState(templateId);
       document.querySelectorAll('[data-template-option]').forEach(el => el.classList.remove('is-active'));
       this.classList.add('is-active');
+      // Update the 3D card model with a slight delay to ensure UI state is set
+      setTimeout(() => {
+        if (typeof window.updateCardModelFromState === 'function') {
+          window.updateCardModelFromState();
+        }
+      }, 50);
       // console.log for template selection is inside applyTemplateToState
     });
   });
@@ -309,10 +408,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (nameInputEl) {
     nameInputEl.addEventListener('input', function (e) {
       window.cardState.name = e.target.value;
-      window.cardState.selectedTemplateId = null;
-      window.selectedTemplateName = '';
-      if (typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
-      console.log("Card state updated (name input):", JSON.parse(JSON.stringify(window.cardState)));
     });
   }
 
@@ -328,20 +423,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (file.type.startsWith('image/')) {
           window.cardState._currentLogoObjectUrl = URL.createObjectURL(file);
           window.cardState.logoUrl = window.cardState._currentLogoObjectUrl;
-          window.cardState.selectedTemplateId = null;
-          window.selectedTemplateName = '';
-          if (typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
-          reflectStateInCustomizeUI();
-          console.log("Card state updated (logo upload):", JSON.parse(JSON.stringify(window.cardState)));
         } else {
           window.cardState.logoUrl = null;
-          reflectStateInCustomizeUI();
-          console.log("Card state updated (logo upload invalid file):", JSON.parse(JSON.stringify(window.cardState)));
         }
       } else {
         window.cardState.logoUrl = null;
-        reflectStateInCustomizeUI();
-        console.log("Card state updated (logo upload no file):", JSON.parse(JSON.stringify(window.cardState)));
       }
     });
   }
@@ -354,11 +440,6 @@ document.addEventListener('DOMContentLoaded', function () {
         window.cardState._currentLogoObjectUrl = null;
       }
       window.cardState.logoUrl = null;
-      window.cardState.selectedTemplateId = null;
-      window.selectedTemplateName = '';
-      if (typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
-      reflectStateInCustomizeUI();
-      console.log("Card state updated (logo removal):", JSON.parse(JSON.stringify(window.cardState)));
     });
   }
 
@@ -383,6 +464,21 @@ document.addEventListener('DOMContentLoaded', function () {
             // No templates defined, clear selected name for header
             window.selectedTemplateName = '';
           }
+        } else {
+          // Ensure selectedTemplateName is set even if selectedTemplateId exists
+          if (!window.selectedTemplateName) {
+            const currentTemplateElement = document.querySelector(`[data-template-option="${window.cardState.selectedTemplateId}"]`);
+            if (currentTemplateElement) {
+              const nameElement = currentTemplateElement.querySelector('div:not(.card_design-item)');
+              if (nameElement && nameElement.textContent.trim()) {
+                window.selectedTemplateName = nameElement.textContent.trim();
+              } else {
+                window.selectedTemplateName = window.cardState.selectedTemplateId;
+              }
+            } else {
+              window.selectedTemplateName = window.cardState.selectedTemplateId;
+            }
+          }
         }
 
         // Ensure the correct template option is marked active visually
@@ -400,31 +496,65 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (typeof window.updateTemplateStep1Header === 'function') window.updateTemplateStep1Header();
+        // Update the 3D card model to reflect the selected template with a slight delay
+        // This ensures all UI state is properly set before updating the model
+        setTimeout(() => {
+          if (typeof window.updateCardModelFromState === 'function') {
+            window.updateCardModelFromState();
+          }
+        }, 50);
         // Existing accordion logic should handle opening the correct template step.
       }
-      console.log("Card state updated (tab switch):", JSON.parse(JSON.stringify(window.cardState)));
+
+      // Update design option tag after tab change
+      setTimeout(() => {
+        if (typeof window.updateDesignOptionTag === 'function') {
+          window.updateDesignOptionTag();
+        }
+      }, 100);
+
+      // Update template option tag after tab change
+      setTimeout(() => {
+        if (typeof window.updateTemplateOptionTag === 'function') {
+          window.updateTemplateOptionTag();
+        }
+      }, 100);
     });
   });
 
+  // Initialize selectedDesignName based on initial customDesign state
   const initialDesignItem = document.querySelector(`[data-design="${window.cardState.customDesign}"]`);
   if (initialDesignItem) {
     const nameElement = initialDesignItem.querySelector('div:not(.card_design-item)');
     window.selectedDesignName = nameElement ? nameElement.textContent.trim() : window.cardState.customDesign.charAt(0).toUpperCase() + window.cardState.customDesign.slice(1);
+    // Mark the initial design as active
+    initialDesignItem.classList.add('is-active');
   } else {
     window.selectedDesignName = window.cardState.customDesign.charAt(0).toUpperCase() + window.cardState.customDesign.slice(1);
   }
 
+  // Initialize selectedTemplateName based on initial selectedTemplateId state
   if (window.cardState.selectedTemplateId) {
     const initialTemplateItem = document.querySelector(`[data-template-option="${window.cardState.selectedTemplateId}"]`);
     if (initialTemplateItem) {
       const nameElement = initialTemplateItem.querySelector('div:not(.card_design-item)');
       window.selectedTemplateName = nameElement ? nameElement.textContent.trim() : window.cardState.selectedTemplateId;
+      // Mark the initial template as active
+      initialTemplateItem.classList.add('is-active');
+    } else {
+      window.selectedTemplateName = window.cardState.selectedTemplateId;
     }
   } else {
-    if (!window.selectedTemplateName && document.querySelector('[data-template-option="01"]')) {
-      const firstTemplateOption = document.querySelector('[data-template-option="01"]');
+    // Fallback: if no selectedTemplateId, try to find first template option
+    const firstTemplateOption = document.querySelector('[data-template-option]');
+    if (firstTemplateOption) {
+      const firstTemplateId = firstTemplateOption.getAttribute('data-template-option');
+      window.cardState.selectedTemplateId = firstTemplateId;
       const nameElement = firstTemplateOption.querySelector('div:not(.card_design-item)');
-      window.selectedTemplateName = nameElement ? nameElement.textContent.trim() : '01';
+      window.selectedTemplateName = nameElement ? nameElement.textContent.trim() : firstTemplateId;
+      firstTemplateOption.classList.add('is-active');
+    } else {
+      window.selectedTemplateName = '01';
     }
   }
 
@@ -432,8 +562,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Delay initial UI updates slightly to allow other scripts to potentially complete their DOM setup.
   if (typeof window.updateStep1Header === 'function') setTimeout(window.updateStep1Header, 50);
-  if (typeof window.updateColorIndicators === 'function') setTimeout(window.updateColorIndicators, 50);
   if (typeof window.updateTemplateStep1Header === 'function') setTimeout(window.updateTemplateStep1Header, 50);
 
-  console.log("Card state management initialized. Initial state:", JSON.parse(JSON.stringify(window.cardState)));
+  // Ensure design option tag is updated on initial load
+  setTimeout(() => {
+    if (typeof window.updateDesignOptionTag === 'function') {
+      window.updateDesignOptionTag();
+    }
+  }, 100);
+
+  // Ensure template option tag is updated on initial load
+  setTimeout(() => {
+    if (typeof window.updateTemplateOptionTag === 'function') {
+      window.updateTemplateOptionTag();
+    }
+  }, 100);
+
+  // Initial update of color indicators
+  if (typeof window.updateColorIndicators === 'undefined') {
+    window.updateColorIndicators = updateColorIndicators;
+  }
+  setTimeout(updateColorIndicators, 50);
 });
