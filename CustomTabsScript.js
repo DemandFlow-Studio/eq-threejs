@@ -376,7 +376,8 @@ document.addEventListener('DOMContentLoaded', function () {
     backBtn.style.pointerEvents = currentStep > 1 ? 'auto' : 'none';
 
     nextBtn.textContent = currentStep === totalSteps ? 'Download card' : 'Next';
-        // Show/hide download info based on button state
+    
+    // Show/hide download info based on button state
     const downloadInfo = document.getElementById('downloadInfo');
     if (downloadInfo) {
       downloadInfo.style.display = currentStep === totalSteps ? 'block' : 'none';
