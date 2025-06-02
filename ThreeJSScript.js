@@ -791,7 +791,7 @@ window.updateCardModelFromState = function () { // Exposed globally
       // Set composite operation to ensure we preserve transparency
       textCtx.globalCompositeOperation = 'source-over';
 
-      let currentFontSize = 36; // Start with desired font size
+      let currentFontSize = 34; // Start with desired font size
       const padding = 32; // Padding from edges
 
       // Set initial font and measure text - use consistent font family
