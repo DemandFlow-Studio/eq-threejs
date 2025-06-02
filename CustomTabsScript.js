@@ -375,7 +375,13 @@ document.addEventListener('DOMContentLoaded', function () {
     backBtn.style.opacity = currentStep > 1 ? '1' : '0.5';
     backBtn.style.pointerEvents = currentStep > 1 ? 'auto' : 'none';
 
-    nextBtn.textContent = currentStep === totalSteps ? 'Download card' : 'Next';
+   // nextBtn.textContent = currentStep === totalSteps ? 'Download card' : 'Next';
+
+    
+    const downloadText = document.getElementById('downloadBtnText');
+    if (downloadText) {
+    downloadText.textContent = currentStep === totalSteps ? 'Download card' : 'Next';
+    }
     
     // Show/hide download info based on button state
     const downloadInfo = document.getElementById('downloadInfo');
