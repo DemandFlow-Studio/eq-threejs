@@ -1087,7 +1087,9 @@ function addPositioningListeners() {
 
 // Simplified Event Listener Setup (Focus on critical state changes)
 function setupBasicListeners() {
-  const nameInput = document.getElementById('name-2');
+
+  const nameInput = document.querySelector('[data-name-input]');
+
   if (nameInput) nameInput.addEventListener('input', (e) => {
     window.cardState.name = e.target.value;
     updateCardModelFromState();
