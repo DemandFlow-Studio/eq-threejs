@@ -10,7 +10,7 @@ const cardMeshes = {};
 // Expose variables globally for floating animations
 window.cardModel = null;
 window.floatingAnimations = null;
-
+ 
 window.cardState = window.cardState || {
   tab: 'customize',
   customDesign: 'duotone',
